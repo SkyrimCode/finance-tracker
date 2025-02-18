@@ -12,7 +12,7 @@ import { useToast } from "../../context/ToastContext";
 import { CustomSelect, MonthYearPicker } from "../custom/InputFields";
 import CustomBreadcrumbs from "../custom/Breadcrumbs";
 
-const FormLayout = ({ pristine, invalid }) => {
+const FormLayout = ({ pristine, invalid, form }) => {
   const { values } = useFormState();
   const stockOptions = [
     { label: "US Stock", value: "usStock" },
@@ -45,6 +45,10 @@ const FormLayout = ({ pristine, invalid }) => {
       default:
         return null;
     }
+  };
+  const handleFieldChange = (form, name) => {
+    const currentTime = new Date().toISOString();
+    form.change(`${name}.timestamp`, currentTime);
   };
 
   const required = (value) => (value ? undefined : "Amount is required");
@@ -98,6 +102,10 @@ const FormLayout = ({ pristine, invalid }) => {
                                   fields.push({ type: "", amount: undefined });
                                 }
                               }}
+                              onChange={(e) => {
+                                input.onChange(e);
+                                handleFieldChange(form, name);
+                              }}
                             />
                             {meta.error && meta.touched && (
                               <span className="text-red-500 text-xs">
@@ -114,19 +122,37 @@ const FormLayout = ({ pristine, invalid }) => {
                       <label className="my-2 text-sm font-semibold">
                         Remarks
                       </label>
-                      <Field
-                        name={`${name}.remarks`}
-                        component="input"
-                        placeholder="Enter income type eg: Salary credit"
-                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault(); // Prevent form submission
-                            fields.push({ type: "", amount: undefined });
-                          }
-                        }}
-                      />
+                      <Field name={`${name}.remarks`}>
+                        {({ input }) => (
+                          <input
+                            {...input}
+                            type="text"
+                            placeholder="Enter income type eg: Salary credit"
+                            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault(); // Prevent form submission
+                                fields.push({ type: "", amount: undefined });
+                              }
+                            }}
+                            onChange={(e) => {
+                              input.onChange(e);
+                              handleFieldChange(form, name);
+                            }}
+                          />
+                        )}
+                      </Field>
                     </div>
+                    <Field name={`${name}.timestamp`}>
+                      {({ input }) => (
+                        <input
+                          {...input}
+                          type="text"
+                          readOnly
+                          className="hidden"
+                        />
+                      )}
+                    </Field>
                   </div>
                   <div className="absolute top-0 right-0 m-1 mt-2">
                     {index > 0 && (
@@ -195,6 +221,10 @@ const FormLayout = ({ pristine, invalid }) => {
                                   : "border-gray-300"
                               } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm`}
                               onWheel={(e) => e.target.blur()}
+                              onChange={(e) => {
+                                input.onChange(e);
+                                handleFieldChange(form, name);
+                              }}
                               onKeyDown={(e) => {
                                 if (e.key === "Enter") {
                                   e.preventDefault();
@@ -215,18 +245,36 @@ const FormLayout = ({ pristine, invalid }) => {
                       <label className="my-2 text-sm font-semibold">
                         Remarks
                       </label>
-                      <Field
-                        name={`${name}.remarks`}
-                        component="input"
-                        placeholder="Enter expense type eg: Food"
-                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault(); // Prevent form submission
-                            fields.push({ type: "", amount: undefined });
-                          }
-                        }}
-                      />
+                      <Field name={`${name}.remarks`}>
+                        {({ input }) => (
+                          <input
+                            {...input}
+                            type="text"
+                            placeholder="Enter expense type eg: Food"
+                            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault(); // Prevent form submission
+                                fields.push({ type: "", amount: undefined });
+                              }
+                            }}
+                            onChange={(e) => {
+                              input.onChange(e);
+                              handleFieldChange(form, name);
+                            }}
+                          />
+                        )}
+                      </Field>
+                      <Field name={`${name}.timestamp`}>
+                        {({ input }) => (
+                          <input
+                            {...input}
+                            type="text"
+                            readOnly
+                            className="hidden"
+                          />
+                        )}
+                      </Field>
                     </div>
                   </div>
                   <div className="absolute top-0 right-0 m-1 mt-2">
@@ -311,6 +359,10 @@ const FormLayout = ({ pristine, invalid }) => {
                                     : "border-gray-300"
                                 } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm`}
                                 onWheel={(e) => e.target.blur()}
+                                onChange={(e) => {
+                                  input.onChange(e);
+                                  handleFieldChange(form, name);
+                                }}
                                 onKeyDown={(e) => {
                                   if (e.key === "Enter") {
                                     e.preventDefault();
@@ -349,6 +401,10 @@ const FormLayout = ({ pristine, invalid }) => {
                                   ? "border-red-500"
                                   : "border-gray-300"
                               } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm`}
+                              onChange={(e) => {
+                                input.onChange(e);
+                                handleFieldChange(form, name);
+                              }}
                               onKeyDown={(e) => {
                                 if (e.key === "Enter") {
                                   e.preventDefault();
@@ -370,18 +426,36 @@ const FormLayout = ({ pristine, invalid }) => {
                       <label className="my-2 text-sm font-semibold">
                         Remarks
                       </label>
-                      <Field
-                        name={`${name}.remarks`}
-                        component="input"
-                        placeholder="Enter investment details eg: NIFTY-50"
-                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault(); // Prevent form submission
-                            fields.push({ type: "", amount: undefined });
-                          }
-                        }}
-                      />
+                      <Field name={`${name}.remarks`}>
+                        {({ input }) => (
+                          <input
+                            {...input}
+                            type="text"
+                            placeholder="Enter investment details eg: NIFTY 50"
+                            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault(); // Prevent form submission
+                                fields.push({ type: "", amount: undefined });
+                              }
+                            }}
+                            onChange={(e) => {
+                              input.onChange(e);
+                              handleFieldChange(form, name);
+                            }}
+                          />
+                        )}
+                      </Field>
+                      <Field name={`${name}.timestamp`}>
+                        {({ input }) => (
+                          <input
+                            {...input}
+                            type="text"
+                            readOnly
+                            className="hidden"
+                          />
+                        )}
+                      </Field>
                     </div>
                   </div>
                   <div className="absolute top-0 right-0 m-1 mt-2">
@@ -493,7 +567,6 @@ function CreateMonth() {
             value === undefined ? null : value,
           ])
         );
-        console.log("Clean data", cleanData);
         update(recordRef, cleanData)
           .then(() => {
             showToast("Success! Data updated.");
@@ -564,9 +637,9 @@ function CreateMonth() {
         mutators={{ ...arrayMutators }}
         initialValues={initialValues}
         onSubmit={onSubmit}
-        render={({ handleSubmit, pristine, invalid }) => (
+        render={({ handleSubmit, pristine, invalid, form }) => (
           <form onSubmit={handleSubmit}>
-            <FormLayout pristine={pristine} invalid={invalid} />
+            <FormLayout pristine={pristine} invalid={invalid} form={form} />
           </form>
         )}
       />

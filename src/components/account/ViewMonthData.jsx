@@ -7,6 +7,11 @@ import { useIsMobile } from "../custom/MobileView";
 
 function ListView({ label, field }) {
   let isExpense = label === "Expense";
+
+  const getFormattedDate = (timestamp) => {
+    const date = new Date(timestamp);
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  };
   return field == null ? (
     <></>
   ) : (
@@ -14,6 +19,10 @@ function ListView({ label, field }) {
       <label className="font-bold mb-2">{label}</label>
 
       {field.map((row, index) => {
+        const inr = new Intl.NumberFormat("en-IN", {
+          style: "currency",
+          currency: "INR",
+        }).format(row.amount);
         return (
           <div
             className="flex items-center gap-4 bg-slate-50 px-4 min-h-[72px] py-2 justify-between"
@@ -65,7 +74,7 @@ function ListView({ label, field }) {
                   {row.remarks}
                 </p>
                 <p className="text-[#4e7397] text-sm font-normal leading-normal line-clamp-2">
-                  Jan 1
+                  {getFormattedDate(row.timestamp)}
                 </p>
               </div>
             </div>
@@ -75,7 +84,7 @@ function ListView({ label, field }) {
                   isExpense ? "text-red-600" : "text-green-600"
                 }`}
               >
-                {isExpense ? `-₹${row.amount}` : `+₹${row.amount}`}
+                {isExpense ? `-${inr}` : `+${inr}`}
               </p>
             </div>
           </div>

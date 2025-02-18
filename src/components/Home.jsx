@@ -195,7 +195,7 @@ function Home() {
   let [rows, setRows] = useState([]);
   let [loading, setIsLoading] = useState(true);
   const user = JSON.parse(localStorage.getItem("user"));
-  const userName = user.displayName?.split(" ")[0];
+  const userName = user?.displayName?.split(" ")[0];
 
   useEffect(() => {
     fetchRowsData(setRows, setIsLoading);
@@ -253,6 +253,8 @@ function Home() {
           Here&apos;s your spending summary for the month
         </label>
         <div className="flex flex-wrap mt-8 gap-4">
+          <Card heading="Net Worth" body={`₹${netWorth}`} />
+          <Card heading="Savings Rate" body={`${savingsRate}%`} />
           <Card
             heading="Total Income"
             body={`₹${currentMonthRecord?.cumulativeIncome ?? 0}`}
@@ -266,9 +268,6 @@ function Home() {
             body={`₹${currentMonthRecord?.cumulativeInvestment ?? 0}`}
           />
           <Card heading="Disposable Income" body={`₹${disposableIncome}`} />
-
-          <Card heading="Savings Rate" body={`${savingsRate}%`} />
-          <Card heading="Net Worth" body={`₹${netWorth}`} />
         </div>
       </div>
       <div className="mt-20 mb-10 pb-16 lg:px-40 lg:py-10 flex justify-center">

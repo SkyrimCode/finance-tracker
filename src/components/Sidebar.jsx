@@ -15,6 +15,7 @@ import {
   Typography,
 } from "@mui/material";
 import { Menu as MenuIcon, Home, AccountCircle } from "@mui/icons-material";
+import CurrencyRupeeIcon from "@mui/icons-material/CurrencyRupee";
 import { Link } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase";
@@ -24,7 +25,6 @@ const Item = ({
   title,
   to,
   icon,
-  selected,
   setSelected,
   sidebarOpen,
   setSidebarOpen,
@@ -49,27 +49,23 @@ const Item = ({
         <ListItemIcon
           sx={{
             color: "#fff",
-            minWidth: "48px", // Keep the default icon size
-            paddingLeft: "0", // Ensure no padding is applied to the icon
+            minWidth: "48px",
+            paddingLeft: "0",
           }}
         >
           {icon}
         </ListItemIcon>
-        {sidebarOpen ? (
+        {sidebarOpen && (
           <ListItemText
             primary={title}
+            className="fade-in"
             sx={{
-              color: "#fff", // Override the default color
-              opacity: selected === title ? 1 : 0.7, // Keep selected state for text opacity
-              whiteSpace: "nowrap", // Prevent overflow of text
-              marginLeft: "10px", // Adjust space between icon and text
-              padding: 0, // Remove internal padding
-              fontWeight: "normal", // Adjust font weight
-              fontSize: "1rem", // Adjust font size
+              color: "#fff",
+              whiteSpace: "nowrap",
+              fontWeight: "normal",
+              fontSize: "1rem",
             }}
           />
-        ) : (
-          <></>
         )}
       </MenuItem>
     </Link>
@@ -80,8 +76,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
   const [selected, setSelected] = useState("");
   const menuItems = [
     { title: "Home", icon: <Home />, path: "/" },
-    { title: "Account", icon: <AccountCircle />, path: "/account" },
-    { title: "Upload", icon: <AccountCircle />, path: "/upload" },
+    { title: "Account", icon: <CurrencyRupeeIcon />, path: "/account" },
   ];
   const [anchorEl, setAnchorEl] = useState(null);
 
@@ -94,7 +89,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
   };
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user"));
-  const userName = user.displayName?.split(" ")[0];
+  const userName = user?.displayName?.split(" ")[0];
   const handleLogout = async () => {
     try {
       await signOut(auth);
