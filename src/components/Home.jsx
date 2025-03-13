@@ -226,22 +226,29 @@ function Home() {
 
   const currentMonthRecord = findRecordByMonthYear(rows);
 
-  const savingsRate = currentMonthRecord
+  const savings = currentMonthRecord
     ? Number(
-        (
-          ((currentMonthRecord?.cumulativeIncome -
-            currentMonthRecord?.cumulativeExpense) *
-            100) /
-          currentMonthRecord?.cumulativeIncome
-        ).toFixed(2)
+        currentMonthRecord?.cumulativeIncome -
+          currentMonthRecord?.cumulativeExpense
       )
     : 0;
+  const savingsRate =
+    savings > 0
+      ? ((savings * 100) / currentMonthRecord?.cumulativeIncome).toFixed(2)
+      : 0;
   const disposableIncome = currentMonthRecord
     ? currentMonthRecord?.cumulativeIncome -
       currentMonthRecord?.cumulativeExpense -
       currentMonthRecord?.cumulativeInvestment
     : 0;
+
   const netWorth = netIncome + netInvestment - netExpense;
+
+  const convertToInr = (val) =>
+    new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+    }).format(val);
 
   return loading ? (
     <LoadingSpinner />
@@ -253,21 +260,24 @@ function Home() {
           Here&apos;s your spending summary for the month
         </label>
         <div className="flex flex-wrap mt-8 gap-4">
-          <Card heading="Net Worth" body={`₹${netWorth}`} />
+          <Card heading="Net Worth" body={convertToInr(netWorth)} />
           <Card heading="Savings Rate" body={`${savingsRate}%`} />
           <Card
             heading="Total Income"
-            body={`₹${currentMonthRecord?.cumulativeIncome ?? 0}`}
+            body={convertToInr(currentMonthRecord?.cumulativeIncome ?? 0)}
           />
           <Card
             heading="Total Expense"
-            body={`₹${currentMonthRecord?.cumulativeExpense ?? 0}`}
+            body={convertToInr(currentMonthRecord?.cumulativeExpense ?? 0)}
           />
           <Card
             heading="Total Investments"
-            body={`₹${currentMonthRecord?.cumulativeInvestment ?? 0}`}
+            body={convertToInr(currentMonthRecord?.cumulativeInvestment ?? 0)}
           />
-          <Card heading="Disposable Income" body={`₹${disposableIncome}`} />
+          <Card
+            heading="Disposable Income"
+            body={convertToInr(disposableIncome)}
+          />
         </div>
       </div>
       <div className="mt-20 mb-10 pb-16 lg:px-40 lg:py-10 flex justify-center">

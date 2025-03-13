@@ -146,7 +146,7 @@ function ViewMonthData() {
   const isMobile = useIsMobile();
   return (
     <div
-      className="flex flex-col gap-4"
+      className="flex flex-col gap-4 pb-8"
       style={{ fontFamily: '"Work Sans", "Noto Sans", sans-serif' }}
     >
       <div className="mb-6">

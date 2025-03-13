@@ -8,9 +8,23 @@ import app from "../../firebase";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useToast } from "../../context/ToastContext";
+import { useState } from "react";
 
 import { CustomSelect, MonthYearPicker } from "../custom/InputFields";
 import CustomBreadcrumbs from "../custom/Breadcrumbs";
+import { ExpandLess, ExpandMore } from "@mui/icons-material";
+
+const ChevronComponent = ({ isOpen, toggle }) => {
+  return (
+    <div onClick={toggle} className="pb-2">
+      {isOpen ? (
+        <ExpandLess fontSize="small" />
+      ) : (
+        <ExpandMore fontSize="small" />
+      )}
+    </div>
+  );
+};
 
 const FormLayout = ({ pristine, invalid, form }) => {
   const { values } = useFormState();
@@ -52,9 +66,12 @@ const FormLayout = ({ pristine, invalid, form }) => {
   };
 
   const required = (value) => (value ? undefined : "Amount is required");
+  const [isOpenIncomeTab, setIsOpenIncomeTab] = useState(false);
+  const [isOpenExpenseTab, setIsOpenExpenseTab] = useState(false);
+  const [isOpenInvestmentTab, setisOpenInvestmentTab] = useState(false);
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-7">
       <div className="flex flex-col gap-2">
         <label className="mt-4 font-semibold border-b border-gray-200 pb-2">
           Time Period
@@ -64,41 +81,82 @@ const FormLayout = ({ pristine, invalid, form }) => {
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 bg-white rounded-xl shadow-md overflow-hidden p-6 border border-gray-200">
-        <label className="mt-1 font-semibold border-b border-gray-200 pb-2">
-          Income (after tax)
-        </label>
-        <FieldArray name="income">
-          {({ fields }) => (
-            <div>
-              {fields.map((name, index) => (
-                <div
-                  key={name}
-                  className="mb-4 relative bg-white border border-gray-200 rounded-lg p-4 w-full"
-                >
-                  <div className=" flex flex-col lg:flex-row lg:gap-8">
-                    {/* Amount Field */}
-                    <div className="flex flex-col lg:w-1/3">
-                      <label className="my-2 text-sm font-semibold">
-                        Amount
-                      </label>
+      <div className="flex flex-col gap-2 bg-white rounded-xl shadow-md overflow-hidden py-1 px-6 border border-gray-200">
+        <div
+          className="flex justify-between items-center py-2"
+          onClick={() => setIsOpenIncomeTab((prev) => !prev)}
+        >
+          <label className="font-semibold">Income (after tax)</label>
+          <ChevronComponent isOpen={isOpenIncomeTab} />
+        </div>
+        <div className={`${isOpenIncomeTab ? "block" : "hidden"}`}>
+          <FieldArray name="income">
+            {({ fields }) => (
+              <div>
+                {fields.map((name, index) => (
+                  <div
+                    key={name}
+                    className="mb-4 relative bg-white border border-gray-200 rounded-lg p-4 w-full"
+                  >
+                    <div className=" flex flex-col lg:flex-row lg:gap-8">
+                      {/* Amount Field */}
+                      <div className="flex flex-col lg:w-1/3">
+                        <label className="my-2 text-sm font-semibold">
+                          Amount
+                        </label>
 
-                      <Field name={`${name}.amount`} validate={required}>
-                        {({ input, meta }) => (
-                          <div>
+                        <Field name={`${name}.amount`} validate={required}>
+                          {({ input, meta }) => (
+                            <div>
+                              <input
+                                {...input}
+                                type="number"
+                                placeholder="Enter income eg: Rs.1000"
+                                className={`w-full p-2 border ${
+                                  meta.error && meta.touched
+                                    ? "border-red-500"
+                                    : "border-gray-300"
+                                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm`}
+                                onWheel={(e) => e.target.blur()}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    fields.push({
+                                      type: "",
+                                      amount: undefined,
+                                    });
+                                  }
+                                }}
+                                onChange={(e) => {
+                                  input.onChange(e);
+                                  handleFieldChange(form, name);
+                                }}
+                              />
+                              {meta.error && meta.touched && (
+                                <span className="text-red-500 text-xs">
+                                  {meta.error}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </Field>
+                      </div>
+
+                      {/* Remarks Field */}
+                      <div className="flex flex-col lg:w-1/3">
+                        <label className="my-2 text-sm font-semibold">
+                          Remarks
+                        </label>
+                        <Field name={`${name}.remarks`}>
+                          {({ input }) => (
                             <input
                               {...input}
-                              type="number"
-                              placeholder="Enter income eg: Rs.1000"
-                              className={`w-full p-2 border ${
-                                meta.error && meta.touched
-                                  ? "border-red-500"
-                                  : "border-gray-300"
-                              } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm`}
-                              onWheel={(e) => e.target.blur()}
+                              type="text"
+                              placeholder="Enter income type eg: Salary credit"
+                              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
                               onKeyDown={(e) => {
                                 if (e.key === "Enter") {
-                                  e.preventDefault();
+                                  e.preventDefault(); // Prevent form submission
                                   fields.push({ type: "", amount: undefined });
                                 }
                               }}
@@ -107,164 +165,9 @@ const FormLayout = ({ pristine, invalid, form }) => {
                                 handleFieldChange(form, name);
                               }}
                             />
-                            {meta.error && meta.touched && (
-                              <span className="text-red-500 text-xs">
-                                {meta.error}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </Field>
-                    </div>
-
-                    {/* Remarks Field */}
-                    <div className="flex flex-col lg:w-1/3">
-                      <label className="my-2 text-sm font-semibold">
-                        Remarks
-                      </label>
-                      <Field name={`${name}.remarks`}>
-                        {({ input }) => (
-                          <input
-                            {...input}
-                            type="text"
-                            placeholder="Enter income type eg: Salary credit"
-                            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                e.preventDefault(); // Prevent form submission
-                                fields.push({ type: "", amount: undefined });
-                              }
-                            }}
-                            onChange={(e) => {
-                              input.onChange(e);
-                              handleFieldChange(form, name);
-                            }}
-                          />
-                        )}
-                      </Field>
-                    </div>
-                    <Field name={`${name}.timestamp`}>
-                      {({ input }) => (
-                        <input
-                          {...input}
-                          type="text"
-                          readOnly
-                          className="hidden"
-                        />
-                      )}
-                    </Field>
-                  </div>
-                  <div className="absolute top-0 right-0 m-1 mt-2">
-                    {index > 0 && (
-                      <IconButton
-                        color="error"
-                        onClick={() => fields.remove(index)}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    )}
-                  </div>
-                </div>
-              ))}
-
-              <Button
-                size="small"
-                onClick={() => fields.push({ type: "", amount: undefined })}
-                sx={{
-                  padding: "2px 30px",
-                  fontSize: "0.75rem",
-                  minWidth: "auto",
-                  height: "28px",
-                  borderRadius: "6px",
-                  textTransform: "none",
-                  fontWeight: "bold",
-                  backgroundColor: "#E8EDF2",
-                  color: "#000",
-                  "&:hover": {
-                    backgroundColor: "#bdbdbd",
-                  },
-                }}
-              >
-                + Add Income
-              </Button>
-            </div>
-          )}
-        </FieldArray>
-      </div>
-      <div className="flex flex-col gap-2 bg-white rounded-xl shadow-md overflow-hidden p-6 border border-gray-200">
-        <label className="mt-1 font-semibold border-b border-gray-200 pb-2">
-          Monthly Expenses
-        </label>
-        <FieldArray name="expense">
-          {({ fields }) => (
-            <div>
-              {fields.map((name, index) => (
-                <div
-                  key={name}
-                  className="relative bg-white border border-gray-200 rounded-lg p-4 mb-4"
-                >
-                  <div className="flex flex-col lg:flex-row lg:gap-8">
-                    <div className="flex flex-col lg:w-1/3">
-                      <label className="my-2 text-sm font-semibold">
-                        Amount
-                      </label>
-                      <Field name={`${name}.amount`} validate={required}>
-                        {({ input, meta }) => (
-                          <div>
-                            <input
-                              {...input}
-                              type="number"
-                              placeholder="Enter income eg: Rs.1000"
-                              className={`w-full p-2 border ${
-                                meta.error && meta.touched
-                                  ? "border-red-500"
-                                  : "border-gray-300"
-                              } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm`}
-                              onWheel={(e) => e.target.blur()}
-                              onChange={(e) => {
-                                input.onChange(e);
-                                handleFieldChange(form, name);
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                  e.preventDefault();
-                                  fields.push({ type: "", amount: undefined });
-                                }
-                              }}
-                            />
-                            {meta.error && meta.touched && (
-                              <span className="text-red-500 text-xs">
-                                {meta.error}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </Field>
-                    </div>
-                    <div className="flex flex-col lg:w-1/3">
-                      <label className="my-2 text-sm font-semibold">
-                        Remarks
-                      </label>
-                      <Field name={`${name}.remarks`}>
-                        {({ input }) => (
-                          <input
-                            {...input}
-                            type="text"
-                            placeholder="Enter expense type eg: Food"
-                            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                e.preventDefault(); // Prevent form submission
-                                fields.push({ type: "", amount: undefined });
-                              }
-                            }}
-                            onChange={(e) => {
-                              input.onChange(e);
-                              handleFieldChange(form, name);
-                            }}
-                          />
-                        )}
-                      </Field>
+                          )}
+                        </Field>
+                      </div>
                       <Field name={`${name}.timestamp`}>
                         {({ input }) => (
                           <input
@@ -276,83 +179,74 @@ const FormLayout = ({ pristine, invalid, form }) => {
                         )}
                       </Field>
                     </div>
-                  </div>
-                  <div className="absolute top-0 right-0 m-1 mt-2">
-                    {index > 0 && (
-                      <IconButton
-                        color="error"
-                        onClick={() => fields.remove(index)}
-                        sx={{
-                          width: "18px",
-                          height: "18px",
-                          padding: "2px",
-                        }}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    )}
-                  </div>
-                </div>
-              ))}
-              <Button
-                size="small"
-                onClick={() => fields.push({ type: "", amount: undefined })}
-                sx={{
-                  padding: "2px 30px",
-                  fontSize: "0.75rem",
-                  minWidth: "auto",
-                  height: "28px",
-                  borderRadius: "6px",
-                  textTransform: "none",
-                  fontWeight: "bold",
-                  backgroundColor: "#E8EDF2",
-                  color: "#000",
-                  "&:hover": {
-                    backgroundColor: "#bdbdbd",
-                  },
-                }}
-              >
-                + Add Expense
-              </Button>
-            </div>
-          )}
-        </FieldArray>
-      </div>
-      <div className="flex flex-col gap-2 bg-white rounded-xl shadow-md p-6 border border-gray-200 overflow-visible relative">
-        <label className="mt-1 font-semibold border-b border-gray-200 pb-2">
-          Investments
-        </label>
-        <FieldArray name="investment">
-          {({ fields }) => (
-            <div>
-              {fields.map((name, index) => (
-                <div
-                  key={name}
-                  className="relative bg-white border border-gray-200 rounded-lg p-4 mb-4"
-                >
-                  <div className="flex flex-col lg:flex-row lg:gap-8">
-                    <div className="flex flex-col lg:w-1/7">
-                      <label className="my-2 text-sm font-semibold">Type</label>
-                      <CustomSelect
-                        name={`${name}.type`}
-                        options={stockOptions}
-                        initialSelected={getSelectBoxOption(
-                          values.investment[index].type
-                        )}
-                      />
+                    <div className="absolute top-0 right-0 m-1 mt-2">
+                      {index > 0 && (
+                        <IconButton
+                          color="error"
+                          onClick={() => fields.remove(index)}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      )}
                     </div>
-                    {isUSInvestment(index) ? (
-                      <div className="flex flex-col lg:w-1/4">
+                  </div>
+                ))}
+                <div className="py-4">
+                  <Button
+                    size="small"
+                    onClick={() => fields.push({ type: "", amount: undefined })}
+                    sx={{
+                      padding: "2px 30px",
+                      fontSize: "0.75rem",
+                      minWidth: "auto",
+                      height: "28px",
+                      borderRadius: "6px",
+                      textTransform: "none",
+                      fontWeight: "bold",
+                      backgroundColor: "#E8EDF2",
+                      color: "#000",
+                      "&:hover": {
+                        backgroundColor: "#bdbdbd",
+                      },
+                    }}
+                  >
+                    + Add Income
+                  </Button>
+                </div>
+              </div>
+            )}
+          </FieldArray>
+        </div>
+      </div>
+      <div className="flex flex-col gap-2 bg-white rounded-xl shadow-md overflow-hidden py-1 px-6 border border-gray-200">
+        <div
+          className="flex justify-between items-center py-2"
+          onClick={() => setIsOpenExpenseTab((prev) => !prev)}
+        >
+          <label className="font-semibold">Monthly Expenses</label>
+          <ChevronComponent isOpen={isOpenExpenseTab} />
+        </div>
+        <div className={`${isOpenExpenseTab ? "block" : "hidden"}`}>
+          <FieldArray name="expense">
+            {({ fields }) => (
+              <div>
+                {fields.map((name, index) => (
+                  <div
+                    key={name}
+                    className="relative bg-white border border-gray-200 rounded-lg p-4 mb-4"
+                  >
+                    <div className="flex flex-col lg:flex-row lg:gap-8">
+                      <div className="flex flex-col lg:w-1/3">
                         <label className="my-2 text-sm font-semibold">
-                          Amount (in USD)
+                          Amount
                         </label>
-                        <Field name={`${name}.usdAmount`} validate={required}>
+                        <Field name={`${name}.amount`} validate={required}>
                           {({ input, meta }) => (
                             <div>
                               <input
                                 {...input}
                                 type="number"
-                                placeholder="Enter USD amount eg: $100"
+                                placeholder="Enter income eg: Rs.1000"
                                 className={`w-full p-2 border ${
                                   meta.error && meta.touched
                                     ? "border-red-500"
@@ -382,116 +276,273 @@ const FormLayout = ({ pristine, invalid, form }) => {
                           )}
                         </Field>
                       </div>
-                    ) : (
-                      <></>
-                    )}
-                    <div className="flex flex-col lg:w-1/4">
-                      <label className="my-2 text-sm font-semibold">
-                        Amount
-                      </label>
-                      <Field name={`${name}.amount`} validate={required}>
-                        {({ input, meta }) => (
-                          <div>
+                      <div className="flex flex-col lg:w-1/3">
+                        <label className="my-2 text-sm font-semibold">
+                          Remarks
+                        </label>
+                        <Field name={`${name}.remarks`}>
+                          {({ input }) => (
                             <input
                               {...input}
-                              type="number"
-                              placeholder="Enter INR equivalent: Rs.8800"
-                              className={`w-full p-2 border ${
-                                meta.error && meta.touched
-                                  ? "border-red-500"
-                                  : "border-gray-300"
-                              } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm`}
+                              type="text"
+                              placeholder="Enter expense type eg: Food"
+                              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault(); // Prevent form submission
+                                  fields.push({ type: "", amount: undefined });
+                                }
+                              }}
                               onChange={(e) => {
                                 input.onChange(e);
                                 handleFieldChange(form, name);
                               }}
+                            />
+                          )}
+                        </Field>
+                        <Field name={`${name}.timestamp`}>
+                          {({ input }) => (
+                            <input
+                              {...input}
+                              type="text"
+                              readOnly
+                              className="hidden"
+                            />
+                          )}
+                        </Field>
+                      </div>
+                    </div>
+                    <div className="absolute top-0 right-0 m-1 mt-2">
+                      {index > 0 && (
+                        <IconButton
+                          color="error"
+                          onClick={() => fields.remove(index)}
+                          sx={{
+                            width: "18px",
+                            height: "18px",
+                            padding: "2px",
+                          }}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                <div className="py-4">
+                  <Button
+                    size="small"
+                    onClick={() => fields.push({ type: "", amount: undefined })}
+                    sx={{
+                      padding: "2px 30px",
+                      fontSize: "0.75rem",
+                      minWidth: "auto",
+                      height: "28px",
+                      borderRadius: "6px",
+                      textTransform: "none",
+                      fontWeight: "bold",
+                      backgroundColor: "#E8EDF2",
+                      color: "#000",
+                      "&:hover": {
+                        backgroundColor: "#bdbdbd",
+                      },
+                    }}
+                  >
+                    + Add Expense
+                  </Button>
+                </div>
+              </div>
+            )}
+          </FieldArray>
+        </div>
+      </div>
+      <div className="flex flex-col gap-2 bg-white rounded-xl shadow-md py-1 px-6 border border-gray-200 overflow-visible relative">
+        <div
+          className="flex justify-between items-center py-2"
+          onClick={() => setisOpenInvestmentTab((prev) => !prev)}
+        >
+          <label className="font-semibold">Investments</label>
+          <ChevronComponent isOpen={isOpenInvestmentTab} />
+        </div>
+        <div className={`${isOpenInvestmentTab ? "block" : "hidden"}`}>
+          <FieldArray name="investment">
+            {({ fields }) => (
+              <div>
+                {fields.map((name, index) => (
+                  <div
+                    key={name}
+                    className="relative bg-white border border-gray-200 rounded-lg p-4 mb-4"
+                  >
+                    <div className="flex flex-col lg:flex-row lg:gap-8">
+                      <div className="flex flex-col lg:w-1/7">
+                        <label className="my-2 text-sm font-semibold">
+                          Type
+                        </label>
+                        <CustomSelect
+                          name={`${name}.type`}
+                          options={stockOptions}
+                          initialSelected={getSelectBoxOption(
+                            values.investment[index].type
+                          )}
+                        />
+                      </div>
+                      {isUSInvestment(index) ? (
+                        <div className="flex flex-col lg:w-1/4">
+                          <label className="my-2 text-sm font-semibold">
+                            Amount (in USD)
+                          </label>
+                          <Field name={`${name}.usdAmount`} validate={required}>
+                            {({ input, meta }) => (
+                              <div>
+                                <input
+                                  {...input}
+                                  type="number"
+                                  placeholder="Enter USD amount eg: $100"
+                                  className={`w-full p-2 border ${
+                                    meta.error && meta.touched
+                                      ? "border-red-500"
+                                      : "border-gray-300"
+                                  } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm`}
+                                  onWheel={(e) => e.target.blur()}
+                                  onChange={(e) => {
+                                    input.onChange(e);
+                                    handleFieldChange(form, name);
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      e.preventDefault();
+                                      fields.push({
+                                        type: "",
+                                        amount: undefined,
+                                      });
+                                    }
+                                  }}
+                                />
+                                {meta.error && meta.touched && (
+                                  <span className="text-red-500 text-xs">
+                                    {meta.error}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </Field>
+                        </div>
+                      ) : (
+                        <></>
+                      )}
+                      <div className="flex flex-col lg:w-1/4">
+                        <label className="my-2 text-sm font-semibold">
+                          Amount
+                        </label>
+                        <Field name={`${name}.amount`} validate={required}>
+                          {({ input, meta }) => (
+                            <div>
+                              <input
+                                {...input}
+                                type="number"
+                                placeholder="Enter INR equivalent: Rs.8800"
+                                className={`w-full p-2 border ${
+                                  meta.error && meta.touched
+                                    ? "border-red-500"
+                                    : "border-gray-300"
+                                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm`}
+                                onChange={(e) => {
+                                  input.onChange(e);
+                                  handleFieldChange(form, name);
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    fields.push({
+                                      type: "",
+                                      amount: undefined,
+                                    });
+                                  }
+                                }}
+                              />
+                              {meta.error && meta.touched && (
+                                <span className="text-red-500 text-xs">
+                                  {meta.error}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </Field>
+                      </div>
+
+                      <div className="flex flex-col lg:w-1/4">
+                        <label className="my-2 text-sm font-semibold">
+                          Remarks
+                        </label>
+                        <Field name={`${name}.remarks`}>
+                          {({ input }) => (
+                            <input
+                              {...input}
+                              type="text"
+                              placeholder="Enter investment details eg: NIFTY 50"
+                              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
                               onKeyDown={(e) => {
                                 if (e.key === "Enter") {
-                                  e.preventDefault();
+                                  e.preventDefault(); // Prevent form submission
                                   fields.push({ type: "", amount: undefined });
                                 }
                               }}
+                              onChange={(e) => {
+                                input.onChange(e);
+                                handleFieldChange(form, name);
+                              }}
                             />
-                            {meta.error && meta.touched && (
-                              <span className="text-red-500 text-xs">
-                                {meta.error}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </Field>
+                          )}
+                        </Field>
+                        <Field name={`${name}.timestamp`}>
+                          {({ input }) => (
+                            <input
+                              {...input}
+                              type="text"
+                              readOnly
+                              className="hidden"
+                            />
+                          )}
+                        </Field>
+                      </div>
                     </div>
-
-                    <div className="flex flex-col lg:w-1/4">
-                      <label className="my-2 text-sm font-semibold">
-                        Remarks
-                      </label>
-                      <Field name={`${name}.remarks`}>
-                        {({ input }) => (
-                          <input
-                            {...input}
-                            type="text"
-                            placeholder="Enter investment details eg: NIFTY 50"
-                            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                e.preventDefault(); // Prevent form submission
-                                fields.push({ type: "", amount: undefined });
-                              }
-                            }}
-                            onChange={(e) => {
-                              input.onChange(e);
-                              handleFieldChange(form, name);
-                            }}
-                          />
-                        )}
-                      </Field>
-                      <Field name={`${name}.timestamp`}>
-                        {({ input }) => (
-                          <input
-                            {...input}
-                            type="text"
-                            readOnly
-                            className="hidden"
-                          />
-                        )}
-                      </Field>
+                    <div className="absolute top-0 right-0 m-1 mt-2">
+                      <IconButton
+                        color="error"
+                        onClick={() => fields.remove(index)}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
                     </div>
                   </div>
-                  <div className="absolute top-0 right-0 m-1 mt-2">
-                    <IconButton
-                      color="error"
-                      onClick={() => fields.remove(index)}
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </div>
+                ))}
+                <div className="py-4">
+                  <Button
+                    size="small"
+                    onClick={() => fields.push({ type: "", amount: undefined })}
+                    sx={{
+                      marginTop: "10px",
+                      padding: "2px 30px",
+                      fontSize: "0.75rem",
+                      minWidth: "auto",
+                      height: "28px",
+                      borderRadius: "6px",
+                      textTransform: "none",
+                      fontWeight: "bold",
+                      backgroundColor: "#E8EDF2",
+                      color: "#000",
+                      "&:hover": {
+                        backgroundColor: "#bdbdbd",
+                      },
+                    }}
+                  >
+                    + Add Investment
+                  </Button>
                 </div>
-              ))}
-              <Button
-                size="small"
-                onClick={() => fields.push({ type: "", amount: undefined })}
-                sx={{
-                  marginTop: "10px",
-                  padding: "2px 30px",
-                  fontSize: "0.75rem",
-                  minWidth: "auto",
-                  height: "28px",
-                  borderRadius: "6px",
-                  textTransform: "none",
-                  fontWeight: "bold",
-                  backgroundColor: "#E8EDF2",
-                  color: "#000",
-                  "&:hover": {
-                    backgroundColor: "#bdbdbd",
-                  },
-                }}
-              >
-                + Add Investment
-              </Button>
-            </div>
-          )}
-        </FieldArray>
+              </div>
+            )}
+          </FieldArray>
+        </div>
       </div>
       <div className="flex justify-start pb-10 ml-2">
         <Button
