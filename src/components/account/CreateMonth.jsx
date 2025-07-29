@@ -2,7 +2,15 @@ import { Form, Field, useFormState } from "react-final-form";
 import { FieldArray } from "react-final-form-arrays";
 import arrayMutators from "final-form-arrays";
 import { Button, IconButton } from "@mui/material";
-import { getDatabase, ref, set, push, update } from "firebase/database";
+import {
+  getDatabase,
+  ref,
+  set,
+  push,
+  update,
+  get,
+  child,
+} from "firebase/database";
 import { getAuth } from "firebase/auth";
 import app from "../../firebase";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -246,7 +254,7 @@ const FormLayout = ({ pristine, invalid, form }) => {
                               <input
                                 {...input}
                                 type="number"
-                                placeholder="Enter income eg: Rs.1000"
+                                placeholder="Enter expense eg: Rs.1000"
                                 className={`w-full p-2 border ${
                                   meta.error && meta.touched
                                     ? "border-red-500"
@@ -601,9 +609,58 @@ function CreateMonth() {
       return Number(totalInvestment);
     };
 
+    const diffData = (
+      previousData,
+      currentData,
+      uniqueKey = "remarks",
+      amountKey = "amount"
+    ) => {
+      const keys = ["expense", "income"];
+      const result = {};
+
+      keys.forEach((key) => {
+        const prevArr = previousData[key] || [];
+        const currArr = currentData[key] || [];
+        const prevMap = new Map();
+        prevArr.forEach((item) => {
+          prevMap.set(item[uniqueKey], item);
+        });
+
+        const diffs = [];
+        currArr.forEach((currItem) => {
+          if (prevMap.has(currItem[uniqueKey])) {
+            const prevItem = prevMap.get(currItem[uniqueKey]);
+            if (prevItem[amountKey] !== currItem[amountKey]) {
+              diffs.push({
+                ...currItem,
+                prevAmount: prevItem[amountKey],
+                type: "UPDATED",
+              });
+            }
+            prevMap.delete(currItem[uniqueKey]);
+          } else {
+            diffs.push({
+              ...currItem,
+              type: "CREATED",
+            });
+          }
+        });
+
+        prevMap.forEach((deletedItem) => {
+          diffs.push({
+            ...deletedItem,
+            type: "DELETED",
+          });
+        });
+
+        result[key] = diffs;
+      });
+
+      return result;
+    };
     if (user) {
       if (isUpdate) {
-        const recordRef = ref(db, `users/${email}/${id}`); // Reference to the record
+        const recordRef = ref(db, `users/${email}/${id}`);
         const data = {
           ...values,
           cumulativeIncome: getIncome(values),
@@ -618,23 +675,61 @@ function CreateMonth() {
             value === undefined ? null : value,
           ])
         );
-        update(recordRef, cleanData)
+
+        get(recordRef)
+          .then((snapshot) => {
+            const previousData = snapshot.val();
+            return update(recordRef, cleanData).then(() => {
+              const archiveRef = child(recordRef.ref.parent, "accountHistory");
+              const dateKey = new Date()
+                .toLocaleString("en-GB", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                  hour12: false,
+                })
+                .replace(",", "");
+              const newArchiveRef = child(archiveRef, dateKey);
+              return set(newArchiveRef, diffData(previousData, cleanData));
+            });
+          })
           .then(() => {
             showToast("Success! Data updated.");
             navigate(`/account/${id}`, { state: { row: cleanData } });
           })
           .catch((error) => {
-            alert("error: ", error.message);
+            alert("error: " + error.message);
           });
       } else {
-        const expenseRef = push(ref(db, `users/${email}`));
-        set(expenseRef, {
+        const generateUniqueKey = () => push(ref(db, "dummy")).key;
+
+        // Function to assign a unique id to each expense in the array.
+        function assignUniqueIds(arr = []) {
+          return arr.map((item) => ({
+            ...item,
+            id: generateUniqueKey(),
+          }));
+        }
+
+        const updatedExpenses = assignUniqueIds(values.expense);
+        const updatedIncome = assignUniqueIds(values.income);
+        const updatedInvestments = assignUniqueIds(values.investments);
+        const data = {
           ...values,
+          expense: updatedExpenses,
+          income: updatedIncome,
+          investments: updatedInvestments,
           cumulativeIncome: getIncome(values),
           cumulativeExpense: getExpense(values),
           cumulativeInvestment: getInvestment(values),
           timestamp: new Date().toISOString(),
-        })
+        };
+        const expenseRef = push(ref(db, `users/${email}`));
+
+        set(expenseRef, data)
           .then(() => {
             showToast("Success! Data saved.");
             navigate("/account");

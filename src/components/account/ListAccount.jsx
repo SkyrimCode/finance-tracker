@@ -1,6 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { DataGrid } from "@mui/x-data-grid";
-import { Button } from "@mui/material";
+import {
+  Button,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+} from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { fetchRowsData } from "../utils/Fetcher";
 
@@ -94,10 +100,75 @@ const columns = [
 export default function Account() {
   let [rows, setRows] = useState([]);
   let [isLoading, setIsLoading] = useState(true);
+  const [selectedYear, setSelectedYear] = useState(
+    new Date().getFullYear().toString()
+  );
   const navigate = useNavigate();
 
   const handleAddRow = () => {
     navigate("/account/new");
+  };
+
+  // Extract unique years from the data
+  const availableYears = useMemo(() => {
+    const years = rows
+      .map((row) => {
+        const monthYear = row.monthYear;
+        if (monthYear) {
+          // Extract year from "April 2025" format
+          const yearMatch = monthYear.match(/\d{4}/);
+          return yearMatch ? yearMatch[0] : null;
+        }
+        return null;
+      })
+      .filter((year) => year !== null);
+
+    return [...new Set(years)].sort((a, b) => b - a);
+  }, [rows]);
+
+  const filteredRows = useMemo(() => {
+    const filtered = rows.filter((row) => {
+      if (!selectedYear) return true;
+      const monthYear = row.monthYear;
+      if (monthYear) {
+        const yearMatch = monthYear.match(/\d{4}/);
+        return yearMatch && yearMatch[0] === selectedYear;
+      }
+      return false;
+    });
+
+    // Sort by month chronologically
+    return filtered.sort((a, b) => {
+      const monthOrder = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+      ];
+
+      const getMonthIndex = (monthYear) => {
+        if (!monthYear) return -1;
+        const monthName = monthYear.split(" ")[0];
+        return monthOrder.indexOf(monthName);
+      };
+
+      const aMonthIndex = getMonthIndex(a.monthYear);
+      const bMonthIndex = getMonthIndex(b.monthYear);
+
+      return aMonthIndex - bMonthIndex;
+    });
+  }, [rows, selectedYear]);
+
+  const handleYearChange = (event) => {
+    setSelectedYear(event.target.value);
   };
 
   useEffect(() => {
@@ -114,15 +185,36 @@ export default function Account() {
         you&apos;re saving. We&apos;ll use this information to help you track
         spending, set budgets, and analyze investment performance.
       </label>
+
+      {/* Year Filter */}
+      <div className="mt-6 mb-4 w-48">
+        <FormControl fullWidth size="small">
+          <InputLabel id="year-filter-label">Filter by Year</InputLabel>
+          <Select
+            labelId="year-filter-label"
+            value={selectedYear}
+            label="Filter by Year"
+            onChange={handleYearChange}
+          >
+            <MenuItem value="">All Years</MenuItem>
+            {availableYears.map((year) => (
+              <MenuItem key={year} value={year}>
+                {year}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </div>
+
       <DataGrid
-        className="mt-10"
+        className="mt-4"
         loading={isLoading}
-        rows={rows}
+        rows={filteredRows}
         columns={columns}
         initialState={{
-          pagination: { paginationModel: { pageSize: 5 } },
+          pagination: { paginationModel: { pageSize: 12 } },
         }}
-        pageSizeOptions={[5]}
+        pageSizeOptions={[10]}
         onRowClick={(params) => {
           navigate(`/account/${params.id}`, { state: { row: params.row } });
         }}

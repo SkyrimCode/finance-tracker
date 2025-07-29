@@ -14,11 +14,12 @@ export const fetchRowsData = (setRows, setIsLoading) => {
 
       if (snapshot.exists()) {
         const records = snapshot.val();
-        const recordsArray = Object.keys(records).map((key) => ({
-          id: key, // Unique Firebase key
-          ...records[key], // Actual data
-        }));
-
+        const recordsArray = Object.keys(records)
+          .filter((key) => key !== "accountHistory")
+          .map((key) => ({
+            id: key,
+            ...records[key],
+          }));
         setRows(recordsArray);
       }
     } else {

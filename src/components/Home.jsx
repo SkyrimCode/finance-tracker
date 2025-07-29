@@ -45,8 +45,8 @@ const getSortedMonthsForCurrentYear = (records) => {
   ];
 
   return records
-    .filter(({ monthYear }) => monthYear.includes(currentYear)) // Filter records for current year
-    .map(({ monthYear }) => monthYear.split(" ")[0]) // Extract month name
+    .filter(({ monthYear }) => monthYear?.includes(currentYear)) // Filter records for current year
+    .map(({ monthYear }) => monthYear?.split(" ")[0]) // Extract month name
     .sort((a, b) => monthOrder.indexOf(a) - monthOrder.indexOf(b)); // Sort by month order
 };
 
@@ -68,8 +68,8 @@ const getSortedFieldForCurrentYear = (records, field) => {
     December: 12,
   };
 
-  const filteredRecords = records.filter((record) => {
-    const [, year] = record.monthYear.split(" ");
+  const filteredRecords = records?.filter((record) => {
+    const [, year] = record?.monthYear?.split(" ") ?? [];
     return parseInt(year) === currentYear;
   });
 
