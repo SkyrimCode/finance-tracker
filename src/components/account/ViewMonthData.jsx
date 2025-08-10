@@ -160,9 +160,15 @@ function ViewMonthData() {
         </div>
       </div>
 
-      <ListView label="Income" field={data.income} />
-      <ListView label="Expense" field={data.expense} />
-      <ListView label="Investment" field={data.investment} />
+      {Array.isArray(data.income) && data.income.length > 0 && (
+        <ListView label="Income" field={data.income} />
+      )}
+      {Array.isArray(data.expense) && data.expense.length > 0 && (
+        <ListView label="Expense" field={data.expense} />
+      )}
+      {Array.isArray(data.investment) && data.investment.length > 0 && (
+        <ListView label="Investment" field={data.investment} />
+      )}
       {!isMobile && (
         <div className="mt-8 ml-2 w-[30%] h-[2%]">
           <UpdateButton data={data} />

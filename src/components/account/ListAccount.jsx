@@ -100,9 +100,8 @@ const columns = [
 export default function Account() {
   let [rows, setRows] = useState([]);
   let [isLoading, setIsLoading] = useState(true);
-  const [selectedYear, setSelectedYear] = useState(
-    new Date().getFullYear().toString()
-  );
+  const currentYear = new Date().getFullYear().toString();
+  const [selectedYear, setSelectedYear] = useState("");
   const navigate = useNavigate();
 
   const handleAddRow = () => {
@@ -175,6 +174,24 @@ export default function Account() {
     fetchRowsData(setRows, setIsLoading);
   }, []);
 
+  // Set default year to current year if available, else ''
+  useEffect(() => {
+    if (availableYears.length > 0) {
+      if (availableYears.includes(currentYear)) {
+        setSelectedYear(currentYear);
+      } else {
+        setSelectedYear("");
+      }
+    }
+  }, [availableYears]);
+
+  // Reset selectedYear if it is not in availableYears (but only if not just set above)
+  useEffect(() => {
+    if (selectedYear && !availableYears.includes(selectedYear)) {
+      setSelectedYear("");
+    }
+  }, [availableYears, selectedYear]);
+
   return (
     <div className="flex flex-col">
       <label className="text-xl font-bold">
@@ -214,7 +231,7 @@ export default function Account() {
         initialState={{
           pagination: { paginationModel: { pageSize: 12 } },
         }}
-        pageSizeOptions={[10]}
+        pageSizeOptions={[10, 12]}
         onRowClick={(params) => {
           navigate(`/account/${params.id}`, { state: { row: params.row } });
         }}

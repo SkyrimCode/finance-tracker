@@ -34,7 +34,7 @@ const ChevronComponent = ({ isOpen, toggle }) => {
   );
 };
 
-const FormLayout = ({ pristine, invalid, form }) => {
+const FormLayout = ({ pristine, form }) => {
   const { values } = useFormState();
   const stockOptions = [
     { label: "US Stock", value: "usStock" },
@@ -113,7 +113,7 @@ const FormLayout = ({ pristine, invalid, form }) => {
                           Amount
                         </label>
 
-                        <Field name={`${name}.amount`} validate={required}>
+                        <Field name={`${name}.amount`}>
                           {({ input, meta }) => (
                             <div>
                               <input
@@ -188,14 +188,12 @@ const FormLayout = ({ pristine, invalid, form }) => {
                       </Field>
                     </div>
                     <div className="absolute top-0 right-0 m-1 mt-2">
-                      {index > 0 && (
-                        <IconButton
-                          color="error"
-                          onClick={() => fields.remove(index)}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      )}
+                      <IconButton
+                        color="error"
+                        onClick={() => fields.remove(index)}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
                     </div>
                   </div>
                 ))}
@@ -248,7 +246,7 @@ const FormLayout = ({ pristine, invalid, form }) => {
                         <label className="my-2 text-sm font-semibold">
                           Amount
                         </label>
-                        <Field name={`${name}.amount`} validate={required}>
+                        <Field name={`${name}.amount`}>
                           {({ input, meta }) => (
                             <div>
                               <input
@@ -321,19 +319,17 @@ const FormLayout = ({ pristine, invalid, form }) => {
                       </div>
                     </div>
                     <div className="absolute top-0 right-0 m-1 mt-2">
-                      {index > 0 && (
-                        <IconButton
-                          color="error"
-                          onClick={() => fields.remove(index)}
-                          sx={{
-                            width: "18px",
-                            height: "18px",
-                            padding: "2px",
-                          }}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      )}
+                      <IconButton
+                        color="error"
+                        onClick={() => fields.remove(index)}
+                        sx={{
+                          width: "18px",
+                          height: "18px",
+                          padding: "2px",
+                        }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
                     </div>
                   </div>
                 ))}
@@ -557,7 +553,6 @@ const FormLayout = ({ pristine, invalid, form }) => {
           type="submit"
           variant="contained"
           color="primary"
-          disabled={pristine || invalid} // Disable if form is invalid
           className="mt-4"
         >
           Submit
@@ -659,13 +654,35 @@ function CreateMonth() {
       return result;
     };
     if (user) {
+      // Helper to filter out empty rows
+      const filterValidRows = (arr = []) =>
+        (arr || []).filter(
+          (item) =>
+            (item.amount !== undefined &&
+              item.amount !== null &&
+              item.amount !== "") ||
+            (item.remarks && item.remarks.trim() !== "")
+        );
+
       if (isUpdate) {
         const recordRef = ref(db, `users/${email}/${id}`);
+        const filteredIncome = filterValidRows(values.income);
+        const filteredExpense = filterValidRows(values.expense);
+        const filteredInvestments = filterValidRows(values.investments);
         const data = {
           ...values,
-          cumulativeIncome: getIncome(values),
-          cumulativeExpense: getExpense(values),
-          cumulativeInvestment: getInvestment(values),
+          income: filteredIncome,
+          expense: filteredExpense,
+          investments: filteredInvestments,
+          cumulativeIncome: getIncome({ ...values, income: filteredIncome }),
+          cumulativeExpense: getExpense({
+            ...values,
+            expense: filteredExpense,
+          }),
+          cumulativeInvestment: getInvestment({
+            ...values,
+            investments: filteredInvestments,
+          }),
           timestamp: new Date().toISOString(),
         };
 
@@ -714,17 +731,26 @@ function CreateMonth() {
           }));
         }
 
-        const updatedExpenses = assignUniqueIds(values.expense);
-        const updatedIncome = assignUniqueIds(values.income);
-        const updatedInvestments = assignUniqueIds(values.investments);
+        const filteredIncome = filterValidRows(values.income);
+        const filteredExpense = filterValidRows(values.expense);
+        const filteredInvestments = filterValidRows(values.investments);
+        const updatedIncome = assignUniqueIds(filteredIncome);
+        const updatedExpenses = assignUniqueIds(filteredExpense);
+        const updatedInvestments = assignUniqueIds(filteredInvestments);
         const data = {
           ...values,
-          expense: updatedExpenses,
           income: updatedIncome,
+          expense: updatedExpenses,
           investments: updatedInvestments,
-          cumulativeIncome: getIncome(values),
-          cumulativeExpense: getExpense(values),
-          cumulativeInvestment: getInvestment(values),
+          cumulativeIncome: getIncome({ ...values, income: updatedIncome }),
+          cumulativeExpense: getExpense({
+            ...values,
+            expense: updatedExpenses,
+          }),
+          cumulativeInvestment: getInvestment({
+            ...values,
+            investments: updatedInvestments,
+          }),
           timestamp: new Date().toISOString(),
         };
         const expenseRef = push(ref(db, `users/${email}`));
@@ -783,9 +809,9 @@ function CreateMonth() {
         mutators={{ ...arrayMutators }}
         initialValues={initialValues}
         onSubmit={onSubmit}
-        render={({ handleSubmit, pristine, invalid, form }) => (
+        render={({ handleSubmit, pristine, form }) => (
           <form onSubmit={handleSubmit}>
-            <FormLayout pristine={pristine} invalid={invalid} form={form} />
+            <FormLayout pristine={pristine} form={form} />
           </form>
         )}
       />
