@@ -9,6 +9,11 @@ import CreateMonth from "./components/account/CreateMonth";
 import ViewMonthData from "./components/account/ViewMonthData";
 import { Box } from "@mui/material";
 import { useState } from "react";
+import Cards from "./components/cards/Cards";
+import AddCard from "./components/cards/AddCard";
+import CardDetails from "./components/cards/CardDetails";
+import EditCard from "./components/cards/EditCard";
+import CardStatements from "./components/cards/CardStatements";
 
 const MainContent = () => {
   return (
@@ -36,6 +41,15 @@ const MainContent = () => {
             <Route path="/account/:id" element={<ViewMonthData />} />
             <Route path="/account/new" element={<CreateMonth />} />
             <Route path="/account/:id/update" element={<CreateMonth />} />
+
+            <Route path="/cards" element={<Cards />} />
+            <Route path="/cards/add" element={<AddCard />} />
+            <Route path="/cards/:cardId" element={<CardDetails />} />
+            <Route path="/cards/:cardId/edit" element={<EditCard />} />
+            <Route
+              path="/cards/:cardId/statements"
+              element={<CardStatements />}
+            />
           </Route>
         </Routes>
       </main>

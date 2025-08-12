@@ -9,7 +9,7 @@ export const fetchRowsData = (setRows, setIsLoading) => {
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       const email = user.email?.replace(/\./g, "_");
-      const dbRef = ref(db, `users/${email}`);
+      const dbRef = ref(db, `users/${email}/accounts`);
       const snapshot = await get(dbRef);
 
       if (snapshot.exists()) {

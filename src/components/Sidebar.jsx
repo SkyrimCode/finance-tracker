@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import { Menu as MenuIcon, Home, AccountCircle } from "@mui/icons-material";
 import CurrencyRupeeIcon from "@mui/icons-material/CurrencyRupee";
+import CreditCardIcon from "@mui/icons-material/CreditCard";
 import { Link } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase";
@@ -77,6 +78,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
   const menuItems = [
     { title: "Home", icon: <Home />, path: "/" },
     { title: "Account", icon: <CurrencyRupeeIcon />, path: "/account" },
+    { title: "Cards", icon: <CreditCardIcon />, path: "/cards" },
   ];
   const [anchorEl, setAnchorEl] = useState(null);
 

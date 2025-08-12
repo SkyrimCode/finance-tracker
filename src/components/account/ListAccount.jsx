@@ -26,7 +26,6 @@ const columns = [
     headerClassName: "bg-gray-100",
     flex: 1,
     align: "center",
-
     headerAlign: "center",
     editable: true,
     valueFormatter: (value) => `₹${value?.toLocaleString() || 0}`,
@@ -35,7 +34,6 @@ const columns = [
     field: "cumulativeExpense",
     headerName: "Expense",
     headerClassName: "bg-gray-100",
-
     flex: 1,
     align: "center",
     headerAlign: "center",
@@ -51,51 +49,6 @@ const columns = [
     valueFormatter: (value) => `₹${value?.toLocaleString() || 0}`,
   },
 ];
-
-// const rows = [
-//   {
-//     id: 1,
-//     month: "January",
-//     income: "₹ 10000",
-//     expense: "₹ 5000",
-//     investment: "₹ 4000",
-//   },
-//   {
-//     id: 2,
-//     month: "February",
-//     income: "₹ 10000",
-//     expense: "₹ 5000",
-//     investment: "₹ 4000",
-//   },
-//   {
-//     id: 3,
-//     month: "March",
-//     income: "₹ 10000",
-//     expense: "₹ 5000",
-//     investment: "₹ 4000",
-//   },
-//   {
-//     id: 4,
-//     month: "April",
-//     income: "₹ 10000",
-//     expense: "₹ 5000",
-//     investment: "₹ 4000",
-//   },
-//   {
-//     id: 5,
-//     month: "May",
-//     income: "₹ 10000",
-//     expense: "₹ 5000",
-//     investment: "₹ 4000",
-//   },
-//   {
-//     id: 6,
-//     month: "June",
-//     income: "₹ 10000",
-//     expense: "₹ 5000",
-//     investment: "₹ 4000",
-//   },
-// ];
 
 export default function Account() {
   let [rows, setRows] = useState([]);

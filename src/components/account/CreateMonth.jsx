@@ -34,7 +34,7 @@ const ChevronComponent = ({ isOpen, toggle }) => {
   );
 };
 
-const FormLayout = ({ pristine, form }) => {
+const FormLayout = ({ form }) => {
   const { values } = useFormState();
   const stockOptions = [
     { label: "US Stock", value: "usStock" },
@@ -665,7 +665,7 @@ function CreateMonth() {
         );
 
       if (isUpdate) {
-        const recordRef = ref(db, `users/${email}/${id}`);
+        const recordRef = ref(db, `users/${email}/accounts/${id}`);
         const filteredIncome = filterValidRows(values.income);
         const filteredExpense = filterValidRows(values.expense);
         const filteredInvestments = filterValidRows(values.investments);
@@ -696,34 +696,45 @@ function CreateMonth() {
         get(recordRef)
           .then((snapshot) => {
             const previousData = snapshot.val();
-            return update(recordRef, cleanData).then(() => {
-              const archiveRef = child(recordRef.ref.parent, "accountHistory");
-              const dateKey = new Date()
-                .toLocaleString("en-GB", {
-                  day: "2-digit",
-                  month: "short",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  second: "2-digit",
-                  hour12: false,
-                })
-                .replace(",", "");
-              const newArchiveRef = child(archiveRef, dateKey);
-              return set(newArchiveRef, diffData(previousData, cleanData));
-            });
+            return update(recordRef, cleanData)
+              .then(() => {
+                const archiveRef = child(
+                  recordRef.ref.parent,
+                  "accountHistory"
+                );
+                const dateKey = new Date()
+                  .toLocaleString("en-GB", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                    hour12: false,
+                  })
+                  .replace(",", "");
+                const newArchiveRef = child(archiveRef, dateKey);
+                return set(
+                  newArchiveRef,
+                  diffData(previousData, cleanData)
+                ).catch((error) => {
+                  showToast(error.message, "error");
+                });
+              })
+              .catch((error) => {
+                showToast(error.message, "error");
+              });
           })
           .then(() => {
             showToast("Success! Data updated.");
             navigate(`/account/${id}`, { state: { row: cleanData } });
           })
           .catch((error) => {
-            alert("error: " + error.message);
+            showToast(error.message, "error");
           });
       } else {
         const generateUniqueKey = () => push(ref(db, "dummy")).key;
 
-        // Function to assign a unique id to each expense in the array.
         function assignUniqueIds(arr = []) {
           return arr.map((item) => ({
             ...item,
@@ -753,7 +764,7 @@ function CreateMonth() {
           }),
           timestamp: new Date().toISOString(),
         };
-        const expenseRef = push(ref(db, `users/${email}`));
+        const expenseRef = push(ref(db, `users/${email}/accounts`));
 
         set(expenseRef, data)
           .then(() => {
@@ -761,7 +772,7 @@ function CreateMonth() {
             navigate("/account");
           })
           .catch((error) => {
-            alert("error: ", error.message);
+            showToast(error.message, "error");
           });
       }
     } else {

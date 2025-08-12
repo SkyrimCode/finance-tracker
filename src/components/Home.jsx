@@ -26,6 +26,7 @@ ChartJS.register(
 import { useEffect, useState } from "react";
 import { fetchRowsData } from "./utils/Fetcher";
 import LoadingSpinner from "./custom/LoadingSpinner";
+import { convertToInr } from "../utils/genericUtils";
 
 const getSortedMonthsForCurrentYear = (records) => {
   const currentYear = new Date().getFullYear();
@@ -243,12 +244,6 @@ function Home() {
     : 0;
 
   const netWorth = netIncome + netInvestment - netExpense;
-
-  const convertToInr = (val) =>
-    new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-    }).format(val);
 
   return loading ? (
     <LoadingSpinner />
