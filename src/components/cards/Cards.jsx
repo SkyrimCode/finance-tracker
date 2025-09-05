@@ -79,9 +79,12 @@ const Cards = () => {
               setCards(cardsArray);
               let totalDueSum = 0;
               let totalBillSum = 0;
+              const now = new Date();
+              const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
               cardsArray.forEach((card) => {
-                const bill = Number(card.totalDue) || 0;
-                const paid = Number(card.amountPaid) || 0;
+                const statement = card.statements?.[monthKey] || {};
+                const bill = Number(statement.totalDue) || 0;
+                const paid = Number(statement.amountPaid) || 0;
                 const due = bill - paid;
                 totalDueSum += due;
                 totalBillSum += bill;
@@ -170,8 +173,11 @@ const Cards = () => {
         <>
           <div className="mt-4 flex flex-col gap-4">
             {cards.map((card) => {
-              const bill = Number(card.totalDue) || 0;
-              const paid = Number(card.amountPaid) || 0;
+              const now = new Date();
+              const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+              const statement = card.statements?.[monthKey] || {};
+              const bill = Number(statement.totalDue) || 0;
+              const paid = Number(statement.amountPaid) || 0;
               const due = bill - paid;
               const logo = bankLogoMap[card.bankName] || fallbackLogo;
               return (

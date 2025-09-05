@@ -24,10 +24,29 @@ const CardStatements = () => {
       .then(([statementsSnap, cardSnap]) => {
         const statementsData = statementsSnap.val() || {};
         const statementsList = Object.entries(statementsData).map(
-          ([month, record]) => ({
-            month,
-            ...record,
-          })
+          ([monthKey, record]) => {
+            const [year, monthNum] = monthKey.split("-");
+            const monthNames = [
+              "January",
+              "February",
+              "March",
+              "April",
+              "May",
+              "June",
+              "July",
+              "August",
+              "September",
+              "October",
+              "November",
+              "December",
+            ];
+            const monthName = monthNames[parseInt(monthNum, 10) - 1];
+            return {
+              month: `${monthName} ${year}`,
+              sortKey: monthKey,
+              ...record,
+            };
+          }
         );
 
         const cardData = cardSnap.val() || {};
@@ -47,26 +66,7 @@ const CardStatements = () => {
             billPaid: cardData.billPaid || false,
           });
         }
-        statementsList.sort((a, b) => {
-          const [monthA, yearA] = a.month.split(" ");
-          const [monthB, yearB] = b.month.split(" ");
-          const months = [
-            "January",
-            "February",
-            "March",
-            "April",
-            "May",
-            "June",
-            "July",
-            "August",
-            "September",
-            "October",
-            "November",
-            "December",
-          ];
-          if (yearA !== yearB) return Number(yearB) - Number(yearA);
-          return months.indexOf(monthB) - months.indexOf(monthA);
-        });
+        statementsList.sort((a, b) => b.sortKey.localeCompare(a.sortKey));
         setStatements(statementsList);
       })
       .catch((error) => {

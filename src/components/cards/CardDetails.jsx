@@ -4,7 +4,7 @@ import { Button, Checkbox, TextField, IconButton } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import CustomBreadcrumbs from "../custom/Breadcrumbs";
 import { useParams, useNavigate } from "react-router-dom";
-import { getDatabase, ref, get, update } from "firebase/database";
+import { getDatabase, ref, get, set, update } from "firebase/database";
 import { getAuth } from "firebase/auth";
 import app from "../../firebase";
 
@@ -25,30 +25,41 @@ const CardDetails = () => {
   useEffect(() => {
     const db = getDatabase(app);
     const auth = getAuth();
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (!user) return;
       const email = user.email.replace(/\./g, "_");
-      get(ref(db, `users/${email}/cards/${cardId}`))
-        .then((snapshot) => {
-          const data = snapshot.val();
-          setCard(data);
-          setForm({
-            cardName: data?.cardName || "",
-            bankName: data?.bankName || "",
-            statementDate: data?.statementDate || "",
-            dueDate: data?.dueDate || "",
-            totalDue: data?.totalDue || "",
-            amountPaid: data?.amountPaid || "",
-            billPaid: data?.billPaid || false,
-          });
-        })
-        .catch((error) => {
-          if (typeof window !== "undefined" && window.showToast) {
-            window.showToast(error.message, "error");
-          } else {
-            alert(error.message);
-          }
-        });
+
+      const cardSnap = await get(ref(db, `users/${email}/cards/${cardId}`));
+      const cardData = cardSnap.val() || {};
+      setCard(cardData);
+      const now = new Date();
+      const monthKey = `${now.getFullYear()}-${String(
+        now.getMonth() + 1
+      ).padStart(2, "0")}`;
+
+      let statement = cardData.statements?.[monthKey];
+      if (!statement) {
+        statement = {
+          totalDue: "",
+          amountPaid: "",
+          billPaid: false,
+          statementDate: cardData.statementDate || "",
+          dueDate: cardData.dueDate || "",
+        };
+        await set(
+          ref(db, `users/${email}/cards/${cardId}/statements/${monthKey}`),
+          statement
+        );
+      }
+      setForm({
+        cardName: cardData.cardName || "",
+        bankName: cardData.bankName || "",
+        statementDate: statement.statementDate || cardData.statementDate || "",
+        dueDate: statement.dueDate || cardData.dueDate || "",
+        totalDue: statement.totalDue || "",
+        amountPaid: statement.amountPaid || "",
+        billPaid: statement.billPaid || false,
+      });
     });
     return () => unsubscribe();
   }, [cardId]);
@@ -85,26 +96,36 @@ const CardDetails = () => {
 
   const handleEdit = () => navigate(`/cards/${cardId}/edit`);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const db = getDatabase(app);
     const auth = getAuth();
     const user = auth.currentUser;
     if (!user) return;
     const email = user.email.replace(/\./g, "_");
-    update(ref(db, `users/${email}/cards/${cardId}`), {
-      ...form,
-      updatedAt: new Date().toISOString(),
-    })
-      .then(() => {
-        navigate("/cards", { state: { showSuccess: true } });
-      })
-      .catch((error) => {
-        if (typeof window !== "undefined" && window.showToast) {
-          window.showToast(error.message, "error");
-        } else {
-          alert(error.message);
+    const now = new Date();
+    const monthKey = `${now.getFullYear()}-${String(
+      now.getMonth() + 1
+    ).padStart(2, "0")}`;
+    try {
+      await update(
+        ref(db, `users/${email}/cards/${cardId}/statements/${monthKey}`),
+        {
+          totalDue: form.totalDue,
+          amountPaid: form.amountPaid,
+          billPaid: form.billPaid,
+          statementDate: form.statementDate,
+          dueDate: form.dueDate,
+          updatedAt: new Date().toISOString(),
         }
-      });
+      );
+      navigate("/cards", { state: { showSuccess: true } });
+    } catch (error) {
+      if (typeof window !== "undefined" && window.showToast) {
+        window.showToast(error.message, "error");
+      } else {
+        alert(error.message);
+      }
+    }
   };
 
   if (!card) return <LoadingSpinner />;
