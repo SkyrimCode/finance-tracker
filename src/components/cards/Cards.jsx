@@ -43,6 +43,7 @@ const Cards = () => {
   const [cards, setCards] = useState([]);
   const [totalDue, setTotalDue] = useState(0);
   const [, setTotalBill] = useState(0);
+  const [totalPaid, setTotalPaid] = useState(0);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
@@ -79,8 +80,11 @@ const Cards = () => {
               setCards(cardsArray);
               let totalDueSum = 0;
               let totalBillSum = 0;
+              let totalPaidSum = 0;
               const now = new Date();
-              const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+              const monthKey = `${now.getFullYear()}-${String(
+                now.getMonth() + 1
+              ).padStart(2, "0")}`;
               cardsArray.forEach((card) => {
                 const statement = card.statements?.[monthKey] || {};
                 const bill = Number(statement.totalDue) || 0;
@@ -88,13 +92,16 @@ const Cards = () => {
                 const due = bill - paid;
                 totalDueSum += due;
                 totalBillSum += bill;
+                totalPaidSum += paid;
               });
               setTotalDue(totalDueSum);
               setTotalBill(totalBillSum);
+              setTotalPaid(totalPaidSum);
             } else {
               setCards([]);
               setTotalDue(0);
               setTotalBill(0);
+              setTotalPaid(0);
             }
             setLoading(false);
           })
@@ -128,10 +135,10 @@ const Cards = () => {
             />
             <div>
               <div className="text-gray-500 text-sm font-medium">
-                Total Amount Due
+                Total Amount Paid
               </div>
               <div className="text-xl font-semibold text-green-700">
-                {convertToInr(totalDue)}
+                {convertToInr(totalPaid)}
               </div>
             </div>
           </div>
@@ -174,12 +181,40 @@ const Cards = () => {
           <div className="mt-4 flex flex-col gap-4">
             {cards.map((card) => {
               const now = new Date();
-              const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+              const today = now.getDate();
+              const monthKey = `${now.getFullYear()}-${String(
+                now.getMonth() + 1
+              ).padStart(2, "0")}`;
               const statement = card.statements?.[monthKey] || {};
               const bill = Number(statement.totalDue) || 0;
               const paid = Number(statement.amountPaid) || 0;
               const due = bill - paid;
               const logo = bankLogoMap[card.bankName] || fallbackLogo;
+              const dueDate = Number(card.dueDate);
+              let dueStatus = null;
+              let dueColor = "text-orange-400";
+              if (bill === 0 && statement.billPaid) {
+                dueStatus = "No Bill Due";
+                dueColor = "text-gray-400 font-semibold";
+              } else if (due <= 0) {
+                dueStatus = "Fully Paid";
+                dueColor = "text-green-600 font-semibold";
+              } else if (!isNaN(dueDate)) {
+                const daysLeft = dueDate - today;
+                if (today >= dueDate) {
+                  dueStatus = `Late by ${today - dueDate} days`;
+                  dueColor = "text-red-700 font-semibold";
+                } else if (daysLeft < 5) {
+                  dueStatus = `Due in ${daysLeft} days`;
+                  dueColor = "text-red-500 font-semibold";
+                } else if (daysLeft > 10) {
+                  dueStatus = `Due in ${daysLeft} days`;
+                  dueColor = "text-yellow-500 font-semibold";
+                } else {
+                  dueStatus = `Due in ${daysLeft} days`;
+                  dueColor = "text-orange-400 font-semibold";
+                }
+              }
               return (
                 <div
                   key={card.id}
@@ -201,8 +236,19 @@ const Cards = () => {
                       </span>
                     </div>
                   </div>
-                  <div className=" flex items-center">
-                    <span className="px-4 py-2">{convertToInr(due)}</span>
+                  <div className="flex flex-col items-center min-w-[100px]">
+                    <span className="px-4 w-full text-center font-medium">
+                      {convertToInr(bill)}
+                    </span>
+                    {dueStatus && (
+                      <span
+                        className={
+                          dueColor + " text-xs w-full text-center mt-1"
+                        }
+                      >
+                        {dueStatus}
+                      </span>
+                    )}
                   </div>
                 </div>
               );

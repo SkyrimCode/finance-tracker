@@ -43,9 +43,8 @@ const CardDetails = () => {
           totalDue: "",
           amountPaid: "",
           billPaid: false,
-          statementDate: cardData.statementDate || "",
-          dueDate: cardData.dueDate || "",
         };
+
         await set(
           ref(db, `users/${email}/cards/${cardId}/statements/${monthKey}`),
           statement
@@ -54,8 +53,8 @@ const CardDetails = () => {
       setForm({
         cardName: cardData.cardName || "",
         bankName: cardData.bankName || "",
-        statementDate: statement.statementDate || cardData.statementDate || "",
-        dueDate: statement.dueDate || cardData.dueDate || "",
+        statementDate: cardData.statementDate || "",
+        dueDate: cardData.dueDate || "",
         totalDue: statement.totalDue || "",
         amountPaid: statement.amountPaid || "",
         billPaid: statement.billPaid || false,
@@ -81,11 +80,26 @@ const CardDetails = () => {
         }));
       }
     } else if (name === "totalDue") {
-      setForm((prev) => ({
-        ...prev,
-        totalDue: value,
-        amountPaid: prev.billPaid ? value : prev.amountPaid,
-      }));
+      setForm((prev) => {
+        const newTotalDue = value;
+        const autoPaid = prev.amountPaid === newTotalDue;
+        return {
+          ...prev,
+          totalDue: newTotalDue,
+          amountPaid: prev.billPaid ? newTotalDue : prev.amountPaid,
+          billPaid: autoPaid ? true : prev.billPaid,
+        };
+      });
+    } else if (name === "amountPaid") {
+      setForm((prev) => {
+        const newAmountPaid = value;
+        const autoPaid = newAmountPaid === prev.totalDue;
+        return {
+          ...prev,
+          amountPaid: newAmountPaid,
+          billPaid: autoPaid ? true : prev.billPaid,
+        };
+      });
     } else {
       setForm((prev) => ({
         ...prev,
@@ -113,8 +127,6 @@ const CardDetails = () => {
           totalDue: form.totalDue,
           amountPaid: form.amountPaid,
           billPaid: form.billPaid,
-          statementDate: form.statementDate,
-          dueDate: form.dueDate,
           updatedAt: new Date().toISOString(),
         }
       );
