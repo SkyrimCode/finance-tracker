@@ -10,6 +10,7 @@ import ViewMonthData from "./components/account/ViewMonthData";
 import { Box } from "@mui/material";
 import { useState } from "react";
 import Cards from "./components/cards/Cards";
+import CardsList from "./components/cards/CardsList";
 import AddCard from "./components/cards/AddCard";
 import CardDetails from "./components/cards/CardDetails";
 import EditCard from "./components/cards/EditCard";
@@ -43,6 +44,7 @@ const MainContent = () => {
             <Route path="/account/:id/update" element={<CreateMonth />} />
 
             <Route path="/cards" element={<Cards />} />
+            <Route path="/cards/list" element={<CardsList />} />
             <Route path="/cards/add" element={<AddCard />} />
             <Route path="/cards/:cardId" element={<CardDetails />} />
             <Route path="/cards/:cardId/edit" element={<EditCard />} />

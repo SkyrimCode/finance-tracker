@@ -143,7 +143,8 @@ const CardDetails = () => {
   if (!card) return <LoadingSpinner />;
 
   const breadcrumbItems = [
-    { label: "Back to Cards", link: "/cards" },
+    { label: "Cards", link: "/cards" },
+    { label: "All Cards", link: "/cards/list" },
     { label: card.cardName || "Card Details", link: "" },
   ];
   return (
@@ -207,7 +208,7 @@ const CardDetails = () => {
           onClick={() => navigate(`/cards/${cardId}/statements`)}
           className="mt-2 ml-2"
         >
-          View Old Statements
+          View Card Details
         </Button>
       </div>
     </div>

@@ -102,7 +102,8 @@ const AddCard = () => {
   };
 
   const breadcrumbItems = [
-    { label: "Back to Cards", link: "/cards" },
+    { label: "Cards", link: "/cards" },
+    { label: "All Cards", link: "/cards/list" },
     { label: "Add Card", link: "" },
   ];
   return (

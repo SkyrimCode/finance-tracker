@@ -2,117 +2,152 @@ import { useEffect, useState } from "react";
 import CustomBreadcrumbs from "../custom/Breadcrumbs";
 import { useParams } from "react-router-dom";
 import { getDatabase, ref, get } from "firebase/database";
-import { getAuth } from "firebase/auth";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import app from "../../firebase";
 import { DataGrid } from "@mui/x-data-grid";
 import { FormControl, InputLabel, Select, MenuItem } from "@mui/material";
+import LoadingSpinner from "../custom/LoadingSpinner";
 
 const CardStatements = () => {
   const { cardId } = useParams();
   const [statements, setStatements] = useState([]);
   const [selectedYear, setSelectedYear] = useState("All");
+  const [currentYearTotal, setCurrentYearTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     const db = getDatabase(app);
     const auth = getAuth();
-    const user = auth.currentUser;
-    if (!user) return;
-    const email = user.email.replace(/\./g, "_");
 
-    Promise.all([
-      get(ref(db, `users/${email}/cards/${cardId}/statements`)),
-      get(ref(db, `users/${email}/cards/${cardId}`)),
-    ])
-      .then(([statementsSnap, cardSnap]) => {
-        const statementsData = statementsSnap.val() || {};
-        const statementsList = Object.entries(statementsData).map(
-          ([monthKey, record]) => {
-            const [year, monthNum] = monthKey.split("-");
-            const monthNames = [
-              "January",
-              "February",
-              "March",
-              "April",
-              "May",
-              "June",
-              "July",
-              "August",
-              "September",
-              "October",
-              "November",
-              "December",
-            ];
-            const monthName = monthNames[parseInt(monthNum, 10) - 1];
-            return {
-              month: `${monthName} ${year}`,
-              sortKey: monthKey,
-              ...record,
-            };
-          }
-        );
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
-        const cardData = cardSnap.val() || {};
-        const now = new Date();
-        const currentMonth = now.toLocaleString("default", {
-          month: "long",
-          year: "numeric",
-        });
-        const alreadyPresent = statementsList.some(
-          (s) => s.month === currentMonth
-        );
-        if (!alreadyPresent && cardData.totalDue !== undefined) {
-          statementsList.push({
-            month: currentMonth,
-            totalDue: cardData.totalDue || 0,
-            amountPaid: cardData.amountPaid || 0,
-            billPaid: cardData.billPaid || false,
+      const email = user.email.replace(/\./g, "_");
+
+      Promise.all([
+        get(ref(db, `users/${email}/cards/${cardId}/statements`)),
+        get(ref(db, `users/${email}/cards/${cardId}`)),
+      ])
+        .then(([statementsSnap, cardSnap]) => {
+          const statementsData = statementsSnap.val() || {};
+          const statementsList = Object.entries(statementsData).map(
+            ([monthKey, record]) => {
+              const [year, monthNum] = monthKey.split("-");
+              const monthNames = [
+                "January",
+                "February",
+                "March",
+                "April",
+                "May",
+                "June",
+                "July",
+                "August",
+                "September",
+                "October",
+                "November",
+                "December",
+              ];
+              const monthName = monthNames[parseInt(monthNum, 10) - 1];
+              return {
+                month: `${monthName} ${year}`,
+                sortKey: monthKey,
+                ...record,
+              };
+            }
+          );
+
+          const cardData = cardSnap.val() || {};
+          const now = new Date();
+          const currentMonth = now.toLocaleString("default", {
+            month: "long",
+            year: "numeric",
           });
-        }
-        statementsList.sort((a, b) => {
-          function getYearMonth(obj) {
-            if (obj.sortKey) {
-              const [year, month] = obj.sortKey.split("-").map(Number);
+          const alreadyPresent = statementsList.some(
+            (s) => s.month === currentMonth
+          );
+          if (!alreadyPresent && cardData.totalDue !== undefined) {
+            statementsList.push({
+              month: currentMonth,
+              totalDue: cardData.totalDue || 0,
+              amountPaid: cardData.amountPaid || 0,
+              billPaid: cardData.billPaid || false,
+            });
+          }
+          statementsList.sort((a, b) => {
+            function getYearMonth(obj) {
+              if (obj.sortKey) {
+                const [year, month] = obj.sortKey.split("-").map(Number);
+                return { year, month };
+              }
+              const [monthName, yearStr] = obj.month.split(" ");
+              const monthNames = [
+                "January",
+                "February",
+                "March",
+                "April",
+                "May",
+                "June",
+                "July",
+                "August",
+                "September",
+                "October",
+                "November",
+                "December",
+              ];
+              const month = monthNames.indexOf(monthName) + 1;
+              const year = Number(yearStr);
               return { year, month };
             }
-            const [monthName, yearStr] = obj.month.split(" ");
-            const monthNames = [
-              "January",
-              "February",
-              "March",
-              "April",
-              "May",
-              "June",
-              "July",
-              "August",
-              "September",
-              "October",
-              "November",
-              "December",
-            ];
-            const month = monthNames.indexOf(monthName) + 1;
-            const year = Number(yearStr);
-            return { year, month };
+            const aDate = getYearMonth(a);
+            const bDate = getYearMonth(b);
+            if (aDate.year !== bDate.year) return aDate.year - bDate.year;
+            return aDate.month - bDate.month;
+          });
+          setStatements(statementsList);
+
+          // Calculate current year total
+          const currentYear = new Date().getFullYear();
+          const yearTotal = statementsList
+            .filter((s) => {
+              if (s.sortKey)
+                return s.sortKey.startsWith(currentYear.toString());
+              return s.month.endsWith(currentYear.toString());
+            })
+            .reduce((sum, s) => sum + (Number(s.totalDue) || 0), 0);
+          setCurrentYearTotal(yearTotal);
+          setLoading(false);
+        })
+        .catch((error) => {
+          if (typeof window !== "undefined" && window.showToast) {
+            window.showToast(error.message, "error");
+          } else {
+            alert(error.message);
           }
-          const aDate = getYearMonth(a);
-          const bDate = getYearMonth(b);
-          if (aDate.year !== bDate.year) return aDate.year - bDate.year;
-          return aDate.month - bDate.month;
+          setLoading(false);
         });
-        setStatements(statementsList);
-      })
-      .catch((error) => {
-        if (typeof window !== "undefined" && window.showToast) {
-          window.showToast(error.message, "error");
-        } else {
-          alert(error.message);
-        }
-      });
+    });
+
+    return () => unsubscribe();
   }, [cardId]);
 
   const breadcrumbItems = [
-    { label: "Back to Cards", link: "/cards" },
+    { label: "Cards", link: "/cards" },
+    { label: "All Cards", link: "/cards/list" },
     { label: "Old Statements", link: "" },
   ];
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[300px]">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
   // DataGrid columns
   const columns = [
     {
@@ -181,6 +216,55 @@ const CardStatements = () => {
       <h2 className="mb-2 font-bold text-lg">Statements</h2>
       <div className="mb-4 text-sm text-gray-500">
         View your previous card statements
+      </div>
+
+      {/* Current Year Total Card */}
+      <div className="mb-6 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-xl shadow-lg p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              <svg
+                className="w-5 h-5 text-white/90"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 8h6m-5 0a3 3 0 110 6H9l3 3m-3-6h6m6 1a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span className="text-white/80 text-xs font-medium uppercase tracking-wide">
+                Total Spending {new Date().getFullYear()}
+              </span>
+            </div>
+            <h3 className="text-4xl font-extrabold text-white mb-1">
+              ₹{currentYearTotal.toLocaleString()}
+            </h3>
+            <p className="text-white/70 text-xs">
+              Across all statements this year
+            </p>
+          </div>
+          <div className="hidden sm:block">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20">
+              <svg
+                className="w-10 h-10 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                />
+              </svg>
+            </div>
+          </div>
+        </div>
       </div>
 
       <FormControl fullWidth size="small" sx={{ maxWidth: 150 }}>

@@ -133,7 +133,8 @@ const EditCard = () => {
   };
 
   const breadcrumbItems = [
-    { label: "Back to Cards", link: "/cards" },
+    { label: "Cards", link: "/cards" },
+    { label: "All Cards", link: "/cards/list" },
     { label: form.cardName || "Card", link: `/cards/${cardId}` },
     { label: "Edit Card", link: "" },
   ];
