@@ -22,6 +22,8 @@ import pnbLogo from "../../assets/bank-logos/pnb.webp";
 import sbiLogo from "../../assets/bank-logos/sbi.webp";
 import hsbcLogo from "../../assets/bank-logos/hsbc.webp";
 import auLogo from "../../assets/bank-logos/au.webp";
+import csbLogo from "../../assets/bank-logos/csb.webp";
+import indusindLogo from "../../assets/bank-logos/indusind.webp";
 import fallbackLogo from "../../assets/bank-logos/default.webp";
 
 const banks = [
@@ -37,6 +39,8 @@ const banks = [
   { name: "Punjab National Bank", logo: pnbLogo },
   { name: "HSBC Bank", logo: hsbcLogo },
   { name: "AU Small Finance Bank", logo: auLogo },
+  { name: "CSB Bank", logo: csbLogo },
+  { name: "IndusInd Bank", logo: indusindLogo },
   { name: "Other", logo: fallbackLogo },
 ];
 import CustomBreadcrumbs from "../custom/Breadcrumbs";

@@ -1,25 +1,8 @@
 import { useEffect, useState } from "react";
 import { Button } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { getDatabase, ref, get, update } from "firebase/database";
+import { getDatabase, ref, get } from "firebase/database";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import app from "../../firebase";
 import { useToast } from "../../context/ToastContext";
 import axisLogo from "../../assets/bank-logos/axis.webp";
@@ -34,6 +17,8 @@ import pnbLogo from "../../assets/bank-logos/pnb.webp";
 import sbiLogo from "../../assets/bank-logos/sbi.webp";
 import hsbcLogo from "../../assets/bank-logos/hsbc.webp";
 import auLogo from "../../assets/bank-logos/au.webp";
+import csbLogo from "../../assets/bank-logos/csb.webp";
+import indusindLogo from "../../assets/bank-logos/indusind.webp";
 import fallbackLogo from "../../assets/bank-logos/default.webp";
 import { convertToInr } from "../../utils/genericUtils";
 import LoadingSpinner from "../custom/LoadingSpinner";
@@ -52,24 +37,11 @@ const bankLogoMap = {
   "Punjab National Bank": pnbLogo,
   "AU Small Finance Bank": auLogo,
   "HSBC Bank": hsbcLogo,
+  "CSB Bank": csbLogo,
+  "IndusInd Bank": indusindLogo,
 };
 
-const SortableCard = ({ card, navigate }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: card.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-
+const Card = ({ card, navigate }) => {
   const now = new Date();
   const today = now.getDate();
   const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(
@@ -119,39 +91,25 @@ const SortableCard = ({ card, navigate }) => {
 
   return (
     <div
-      ref={setNodeRef}
-      style={{ ...style, touchAction: "none" }}
-      {...attributes}
-      {...listeners}
-      className="group bg-white border border-gray-200 rounded-xl shadow-sm px-5 py-4 flex items-center justify-between hover:shadow-md hover:border-blue-300 transition-all touch-none cursor-grab active:cursor-grabbing"
+      className="group bg-white border border-gray-200 rounded-xl shadow-sm px-5 py-4 flex items-center justify-between hover:shadow-md hover:border-blue-300 transition-all cursor-pointer"
+      onClick={() => navigate(`/cards/${card.id}`)}
     >
       <div className="flex items-center gap-4 min-w-0 flex-1">
-        <div
-          className="flex items-center gap-4 min-w-0 flex-1"
-          onClick={() => navigate(`/cards/${card.id}`)}
-        >
-          <img
-            src={logo}
-            alt={card.bankName}
-            className="w-12 h-12 rounded-lg object-contain bg-gray-50 border border-gray-200 p-1"
-          />
-          <div className="flex flex-col min-w-0">
-            <span className="font-sans font-bold text-base text-gray-900 truncate">
-              {card.bankName}
-            </span>
-            <span className="text-sm text-gray-500 truncate">
-              {card.cardName}
-            </span>
-          </div>
+        <img
+          src={logo}
+          alt={card.bankName}
+          className="w-12 h-12 rounded-lg object-contain bg-gray-50 border border-gray-200 p-1"
+        />
+        <div className="flex flex-col min-w-0">
+          <span className="font-sans font-bold text-base text-gray-900 truncate">
+            {card.bankName}
+          </span>
+          <span className="text-sm text-gray-500 truncate">
+            {card.cardName}
+          </span>
         </div>
       </div>
-      <div
-        className="flex flex-col items-end min-w-[120px]"
-        onClick={(e) => {
-          e.stopPropagation();
-          navigate(`/cards/${card.id}`);
-        }}
-      >
+      <div className="flex flex-col items-end min-w-[120px]">
         <span className="text-lg font-bold text-gray-900">
           {convertToInr(bill)}
         </span>
@@ -189,12 +147,6 @@ const CardsList = () => {
                 id,
                 ...value,
               }));
-              // Sort by displayOrder, if not set use original order
-              cardsArray.sort((a, b) => {
-                const orderA = a.displayOrder ?? 999999;
-                const orderB = b.displayOrder ?? 999999;
-                return orderA - orderB;
-              });
               setCards(cardsArray);
             } else {
               setCards([]);
@@ -214,61 +166,6 @@ const CardsList = () => {
     // Cleanup subscription on unmount
     return () => unsubscribe();
   }, [showToast]);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 200,
-        tolerance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  const handleDragEnd = async (event) => {
-    const { active, over } = event;
-
-    if (!over || active.id === over.id) return;
-
-    const oldIndex = cards.findIndex((card) => card.id === active.id);
-    const newIndex = cards.findIndex((card) => card.id === over.id);
-
-    const newCards = arrayMove(cards, oldIndex, newIndex);
-
-    // Update displayOrder for all cards
-    const updatedCards = newCards.map((card, index) => ({
-      ...card,
-      displayOrder: index,
-    }));
-
-    setCards(updatedCards);
-
-    // Save to Firebase
-    try {
-      const db = getDatabase(app);
-      const auth = getAuth();
-      const user = auth.currentUser;
-      if (user) {
-        const email = user.email?.replace(/\./g, "_");
-        const updates = {};
-        updatedCards.forEach((card) => {
-          updates[`users/${email}/cards/${card.id}/displayOrder`] =
-            card.displayOrder;
-        });
-        await update(ref(db), updates);
-        showToast("Card order updated", "success");
-      }
-    } catch (error) {
-      showToast(error.message, "error");
-    }
-  };
 
   const breadcrumbItems = [
     { label: "Cards", link: "/cards" },
@@ -308,22 +205,11 @@ const CardsList = () => {
           </Button>
         </div>
       ) : (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
-          <SortableContext
-            items={cards.map((card) => card.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            <div className="flex flex-col gap-3">
-              {cards.map((card) => (
-                <SortableCard key={card.id} card={card} navigate={navigate} />
-              ))}
-            </div>
-          </SortableContext>
-        </DndContext>
+        <div className="flex flex-col gap-3">
+          {cards.map((card) => (
+            <Card key={card.id} card={card} navigate={navigate} />
+          ))}
+        </div>
       )}
 
       {cards.length > 0 && (
